@@ -38,8 +38,7 @@ python3 -m pip uninstall revview
 ## Use
 
 
-New to revview? Start with the [tutorial](tutorial/README.md), or watch the
-[tutorial video](tutorial/tut.webm).
+New to revview? Start with the [tutorial](tutorial/README.md).<!--, or watch the [tutorial video](tutorial/tut.webm).-->
 <!--
 In Claude Code, type `/revview` or ask in plain words:
 
