@@ -1,0 +1,543 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Revision Comments</title>
+<style>
+  :root{
+    --bg:#f5f6f8; --panel:#ffffff; --border:#d9dce1; --text:#1c232b; --muted:#6b7684;
+    --accent:#2563eb; --red:#e5484d; --green:#2fa84f; --chip-red:#d9534f; --chip-yellow:#d8a400; --chip-green:#3c9a40;
+    --sidebar-w:360px;
+  }
+  @media (prefers-color-scheme: dark){
+    :root{
+      --bg:#14171c; --panel:#1b1f26; --border:#2b313b; --text:#e7eaee; --muted:#8b93a0;
+      --accent:#5b9dff; --red:#ef6a6e; --green:#4fc96f; --chip-red:#e06c67; --chip-yellow:#e0bb4a; --chip-green:#6bc96f;
+    }
+  }
+  *{box-sizing:border-box;}
+  html,body{height:100%;margin:0;}
+  body{
+    background:var(--bg); color:var(--text);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;
+    display:flex; flex-direction:column;
+  }
+  header{
+    padding:10px 16px; border-bottom:1px solid var(--border); background:var(--panel);
+    display:flex; align-items:center; gap:16px; flex-wrap:wrap;
+  }
+  header h1{font-size:15px; margin:0; font-weight:600;}
+  .legend{display:flex; gap:12px; font-size:12px; color:var(--muted); align-items:center;}
+  .legend .swatch{display:inline-block; width:14px; height:10px; border-radius:2px; margin-right:4px; vertical-align:-1px;}
+  .stats{font-size:11px; color:var(--muted); padding:6px 12px; border-top:1px solid var(--border);}
+  header{flex-wrap:nowrap; padding:8px 12px; gap:12px;}
+  header h1{white-space:nowrap; overflow:hidden; text-overflow:ellipsis; min-width:0;}
+  .legend{flex-shrink:0; margin-left:auto;}
+  @media (max-width:1100px){ .legend{display:none;} }
+  .bodyRow{flex:1; display:flex; min-height:0;}
+  #sidebar{
+    width:var(--sidebar-w); min-width:260px; border-right:1px solid var(--border);
+    background:var(--panel); display:flex; flex-direction:column;
+  }
+  #sidebarControls{padding:8px; border-bottom:1px solid var(--border); display:flex; gap:6px;}
+  #searchBox{flex:1; padding:6px 8px; border:1px solid var(--border); border-radius:6px; background:var(--bg); color:var(--text); font-size:12px;}
+  .filterBtn{
+    padding:5px 9px; border:1px solid var(--border); border-radius:6px; background:var(--bg);
+    color:var(--text); font-size:11px; cursor:pointer;
+  }
+  .filterBtn.active{background:var(--accent); color:#fff; border-color:var(--accent);}
+  #commentList{flex:1; overflow-y:auto;}
+  .sectionHeader{
+    position:sticky; top:0; background:var(--panel); padding:6px 12px; font-size:11px;
+    font-weight:700; text-transform:uppercase; letter-spacing:.04em; color:var(--muted);
+    border-bottom:1px solid var(--border); z-index:2;
+  }
+  .item{padding:8px 12px; border-bottom:1px solid var(--border); cursor:pointer; font-size:12.5px;}
+  .item:hover{background:var(--bg);}
+  .item.active{background:var(--accent); color:#fff;}
+  .item.active .muted{color:#dbe8ff;}
+  .itemTop{display:flex; align-items:center; gap:6px; margin-bottom:3px;}
+  .status{font-size:12px;}
+  .chips{display:flex; gap:3px; margin-left:auto;}
+  .chip{width:8px; height:8px; border-radius:50%; display:inline-block;}
+  .chip.red{background:var(--chip-red);} .chip.yellow{background:var(--chip-yellow);} .chip.green{background:var(--chip-green);}
+  .locBadge{font-size:9px; padding:1px 4px; border-radius:3px; border:1px solid var(--border); color:var(--muted);}
+  .locBadge.found{border-color:var(--chip-green); color:var(--chip-green);}
+  .locBadge.approx{border-style:dashed;}
+  .item.active .locBadge{color:#fff; border-color:rgba(255,255,255,.8);}
+  .excerpt{color:var(--muted); line-height:1.35; display:-webkit-box; -webkit-line-clamp:3; -webkit-box-orient:vertical; overflow:hidden;}
+  .excerpt p, .excerpt ul, .excerpt ol, .excerpt li{display:inline; margin:0; padding:0;}
+  .excerpt li::before{content:" \2022 ";}
+  .item.active .excerpt{color:#eef3ff;}
+  .item.open .excerpt{display:none;}
+  .detail{padding:4px 0 0 0; font-size:12px; line-height:1.45;}
+  .detail .reviewer{margin-bottom:6px;}
+  .respBlock{padding:6px 8px; border-radius:6px; margin-bottom:5px;}
+  .md p{margin:0 0 .45em;} .md p:last-child{margin-bottom:0;}
+  .md ul, .md ol{margin:.2em 0 .45em; padding-left:1.3em;} .md li{margin:.1em 0;}
+  .md ul:last-child, .md ol:last-child{margin-bottom:0;}
+  .md code{font-family:ui-monospace,SFMono-Regular,Consolas,Menlo,monospace; font-size:.9em;
+    background:rgba(127,127,127,.18); padding:.05em .35em; border-radius:3px; white-space:pre-wrap; word-break:break-word;}
+  .item.active .reviewer code, .item.active .excerpt code{background:rgba(255,255,255,.22);}
+  .md math{font-size:1.08em;}
+  .md a{color:inherit;}
+  .respBlock.red{background:#ffd9d9;} .respBlock.yellow{background:#fff3b0;} .respBlock.green{background:#cdf3d4;}
+  .respBlock{color:#1c232b;}
+  .respLabel{font-size:9px; text-transform:uppercase; letter-spacing:.04em; opacity:.65; display:block; margin-bottom:2px;}
+  #main{flex:1; display:flex; min-width:0;}
+  .pane{flex:1; min-width:0; display:flex; flex-direction:column; border-right:1px solid var(--border);}
+  .pane:last-child{border-right:none;}
+  .paneHeader{
+    padding:8px 14px; font-size:12px; font-weight:600; background:var(--panel);
+    border-bottom:1px solid var(--border); flex-shrink:0; display:flex; justify-content:space-between;
+  }
+  .paneHeader .note{font-weight:400; color:var(--muted); font-size:11px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; min-width:0;}
+  .paneHeader{align-items:center; gap:10px;}
+  .paneTitle{white-space:nowrap;}
+  .zoomCtl{display:flex; align-items:center; gap:3px; flex-shrink:0;}
+  .zoomCtl button, .viewBtn{
+    min-width:26px; height:24px; padding:0 7px; border:1px solid var(--border); border-radius:5px;
+    background:var(--bg); color:var(--text); font-size:12px; cursor:pointer; line-height:1;
+  }
+  .zoomCtl button:hover, .viewBtn:hover{border-color:var(--accent);}
+  .viewBtn.active, .zoomCtl button.active{background:var(--accent); color:#fff; border-color:var(--accent);}
+  .zoomPct{font-size:11px; font-weight:500; min-width:40px; text-align:center; color:var(--muted); font-variant-numeric:tabular-nums;}
+  .viewCtl{display:flex; gap:4px; align-items:center;}
+  .viewCtl label{font-size:12px; color:var(--muted); display:flex; align-items:center; gap:4px; margin-left:6px; cursor:pointer;}
+  .paneBody{flex:1; overflow:auto; background:#8d9299; padding:16px; --pw:800px;}
+  .pdfPage{
+    position:relative; margin:0 auto 18px auto; background:#fff; box-shadow:0 1px 4px rgba(0,0,0,.35);
+    width:var(--pw);
+  }
+  #sidebar.collapsed{display:none;}
+  #main .pane{border-right:none;}
+  #main.stacked{flex-direction:column;}
+  #main.stacked .pane{min-height:0;}
+  .splitter{flex:0 0 6px; background:var(--border); cursor:col-resize;}
+  .splitter:hover, .splitter.dragging{background:var(--accent);}
+  #main.stacked .splitter{cursor:row-resize;}
+  body.resizing{user-select:none;}
+  body.resizing .paneBody{pointer-events:none;}
+  .pdfPage img{display:block; width:100%; height:auto; user-select:none;}
+  .pageLabel{
+    position:absolute; top:-10px; left:-6px; background:var(--panel); color:var(--muted);
+    font-size:10px; padding:1px 6px; border-radius:4px; border:1px solid var(--border);
+  }
+  .hlRect{
+    position:absolute; border-radius:2px; pointer-events:none;
+    background:rgba(229,72,77,.35); outline:2px solid rgba(229,72,77,.85);
+  }
+  .hlRect.green{background:rgba(47,168,79,.35); outline:2px solid rgba(47,168,79,.85);}
+  .hlRect.approx{outline-style:dashed;}
+  ::-webkit-scrollbar{width:10px; height:10px;}
+  ::-webkit-scrollbar-thumb{background:var(--border); border-radius:5px;}
+</style>
+</head>
+<body>
+<header>
+  <button class="viewBtn" id="toggleSidebar" title="Show/hide comment list">&#9776;</button>
+  <h1 id="pageTitle">Reviewer Comments</h1>
+  <div class="viewCtl">
+    <button class="viewBtn" id="layoutSide" title="PDFs side by side">&#9707; Side by side</button>
+    <button class="viewBtn" id="layoutStack" title="PDFs stacked top/bottom">&#9636; Stacked</button>
+    <label title="Zoom both PDFs together"><input type="checkbox" id="linkZoom" checked> link zoom</label>
+  </div>
+  <div class="legend">
+    <span title="Passage the reviewer commented on"><span class="swatch" style="background:rgba(229,72,77,.5)"></span><span class="oldLabel"></span> commented</span>
+    <span title="Corresponding revised passage"><span class="swatch" style="background:rgba(47,168,79,.5)"></span><span class="newLabel"></span> revised</span>
+    <span title="Approximate location: nearby text is shown"><span class="swatch" style="outline:1px dashed var(--muted); background:transparent"></span>approx.</span>
+  </div>
+</header>
+<div class="bodyRow">
+  <div id="sidebar">
+    <div id="sidebarControls">
+      <input id="searchBox" type="text" placeholder="Filter comments...">
+      <button class="filterBtn active statusFilter" data-filter="all">All</button>
+      <button class="filterBtn statusFilter" data-filter="open">Open</button>
+      <button class="filterBtn statusFilter" data-filter="done">Done</button>
+    </div>
+    <div id="commentList"></div>
+    <div class="stats" id="statsLine"></div>
+  </div>
+  <div id="main">
+    <div class="pane">
+      <div class="paneHeader">
+        <span class="paneTitle"><span class="oldLabel"></span> (commented)</span>
+        <span class="zoomCtl" data-pane="v2Pane">
+          <button data-z="out" title="Zoom out (-)">&minus;</button>
+          <span class="zoomPct">100%</span>
+          <button data-z="in" title="Zoom in (+)">+</button>
+          <button data-z="fit" title="Fit width (0)">Fit</button>
+        </span>
+        <span class="note" id="v2Note"></span>
+      </div>
+      <div class="paneBody" id="v2Pane"></div>
+    </div>
+    <div class="splitter" id="splitter" title="Drag to resize · double-click to reset"></div>
+    <div class="pane">
+      <div class="paneHeader">
+        <span class="paneTitle"><span class="newLabel"></span> (revised)</span>
+        <span class="zoomCtl" data-pane="v3Pane">
+          <button data-z="out" title="Zoom out (-)">&minus;</button>
+          <span class="zoomPct">100%</span>
+          <button data-z="in" title="Zoom in (+)">+</button>
+          <button data-z="fit" title="Fit width (0)">Fit</button>
+        </span>
+        <span class="note" id="v3Note"></span>
+      </div>
+      <div class="paneBody" id="v3Pane"></div>
+    </div>
+  </div>
+</div>
+
+<script src="data.js"></script>
+<script>
+function escapeHtml(s){
+  return s.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+}
+
+function renderPdfPane(container, pageMeta, dirName, count){
+  const frag = document.createDocumentFragment();
+  for(let i=0;i<count;i++){
+    const pageNum = i + 1;
+    const wrap = document.createElement('div');
+    wrap.className = 'pdfPage';
+    wrap.id = container.id + '-page-' + i;
+    const meta = pageMeta[i];
+    wrap.style.aspectRatio = meta ? (meta.width + ' / ' + meta.height) : '';
+    const label = document.createElement('div');
+    label.className = 'pageLabel';
+    label.textContent = 'p. ' + pageNum;
+    const img = document.createElement('img');
+    img.loading = 'lazy';
+    img.src = dirName + '/p-' + pageNum + '.' + CONFIG.imageExt;
+    img.alt = 'page ' + pageNum;
+    const overlay = document.createElement('div');
+    overlay.className = 'overlay';
+    overlay.style.position = 'absolute';
+    overlay.style.inset = '0';
+    wrap.appendChild(label);
+    wrap.appendChild(img);
+    wrap.appendChild(overlay);
+    frag.appendChild(wrap);
+  }
+  container.appendChild(frag);
+}
+
+const v2Pane = document.getElementById('v2Pane');
+const v3Pane = document.getElementById('v3Pane');
+renderPdfPane(v2Pane, OLD_PAGE_META, 'old_pages', OLD_PAGE_META.length);
+renderPdfPane(v3Pane, NEW_PAGE_META, 'new_pages', NEW_PAGE_META.length);
+document.title = CONFIG.title;
+document.getElementById('pageTitle').textContent = CONFIG.title;
+document.querySelectorAll('.oldLabel').forEach(e => e.textContent = CONFIG.oldLabel);
+document.querySelectorAll('.newLabel').forEach(e => e.textContent = CONFIG.newLabel);
+if(!COMMENTS.some(c => c.status)) document.querySelectorAll('.statusFilter').forEach(b => b.style.display = 'none');
+
+// ---------------- view settings: layout, sidebar, zoom ----------------
+const BASE_PX = Math.round(((OLD_PAGE_META[0] || {width: 595.3}).width) * 96 / 72); // 100% = real size at 96 dpi
+const ZOOM_MIN = 0.3, ZOOM_MAX = 4, ZOOM_STEP = 1.15;
+const store = {
+  get(k, d){ try{ const v = localStorage.getItem('revview.' + k); return v === null ? d : JSON.parse(v); }catch(e){ return d; } },
+  set(k, v){ try{ localStorage.setItem('revview.' + k, JSON.stringify(v)); }catch(e){} },
+};
+const panes = {v2Pane, v3Pane};
+const zoomState = {
+  v2Pane: store.get('zoom.v2Pane', {fit:true, scale:1}),
+  v3Pane: store.get('zoom.v3Pane', {fit:true, scale:1}),
+};
+const linkZoomEl = document.getElementById('linkZoom');
+linkZoomEl.checked = store.get('linkZoom', true);
+
+function fitScale(pane){
+  const avail = pane.clientWidth - 32; // paneBody horizontal padding
+  return Math.max(ZOOM_MIN, avail / BASE_PX);
+}
+function currentScale(id){
+  const z = zoomState[id];
+  return z.fit ? fitScale(panes[id]) : z.scale;
+}
+// Re-apply page width keeping the point under (clientX, clientY), or the viewport centre, fixed.
+function applyZoom(id, anchorX, anchorY){
+  const pane = panes[id];
+  const r = pane.getBoundingClientRect();
+  const ax = anchorX === undefined ? r.width / 2 : anchorX - r.left;
+  const ay = anchorY === undefined ? r.height / 2 : anchorY - r.top;
+  const fx = (pane.scrollLeft + ax) / Math.max(1, pane.scrollWidth);
+  const fy = (pane.scrollTop + ay) / Math.max(1, pane.scrollHeight);
+  const scale = currentScale(id);
+  pane.style.setProperty('--pw', Math.round(BASE_PX * scale) + 'px');
+  pane.scrollLeft = fx * pane.scrollWidth - ax;
+  pane.scrollTop = fy * pane.scrollHeight - ay;
+  const ctl = document.querySelector('.zoomCtl[data-pane="' + id + '"]');
+  ctl.querySelector('.zoomPct').textContent = Math.round(scale * 100) + '%';
+  ctl.querySelector('[data-z="fit"]').classList.toggle('active', zoomState[id].fit);
+  store.set('zoom.' + id, zoomState[id]);
+}
+function zoomPane(id, action, anchorX, anchorY){
+  const targets = linkZoomEl.checked ? Object.keys(panes) : [id];
+  const base = currentScale(id);
+  for(const t of targets){
+    const z = zoomState[t];
+    if(action === 'fit'){ z.fit = true; }
+    else{
+      let s = action === 'in' ? base * ZOOM_STEP : action === 'out' ? base / ZOOM_STEP : action;
+      z.scale = Math.min(ZOOM_MAX, Math.max(ZOOM_MIN, s));
+      z.fit = false;
+    }
+    if(t === id) applyZoom(t, anchorX, anchorY); else applyZoom(t);
+  }
+}
+document.querySelectorAll('.zoomCtl button').forEach(b => {
+  b.addEventListener('click', () => zoomPane(b.parentElement.dataset.pane, b.dataset.z));
+});
+linkZoomEl.addEventListener('change', () => store.set('linkZoom', linkZoomEl.checked));
+// Ctrl/Cmd + wheel zooms the PDF under the pointer instead of the whole page.
+for(const id of Object.keys(panes)){
+  panes[id].addEventListener('wheel', e => {
+    if(!(e.ctrlKey || e.metaKey)) return;
+    e.preventDefault();
+    zoomPane(id, e.deltaY < 0 ? 'in' : 'out', e.clientX, e.clientY);
+  }, {passive:false});
+}
+// Keyboard: + / - / 0 act on the pane under the mouse (or both) when not typing.
+let hoverPane = 'v2Pane';
+for(const id of Object.keys(panes)) panes[id].addEventListener('mouseenter', () => hoverPane = id);
+document.addEventListener('keydown', e => {
+  if(e.target.tagName === 'INPUT' || e.ctrlKey || e.metaKey || e.altKey) return;
+  if(e.key === '+' || e.key === '=') zoomPane(hoverPane, 'in');
+  else if(e.key === '-' || e.key === '_') zoomPane(hoverPane, 'out');
+  else if(e.key === '0') zoomPane(hoverPane, 'fit');
+});
+// Keep "Fit" panes fitted when the window, sidebar or layout changes.
+const ro = new ResizeObserver(entries => {
+  for(const en of entries){ if(zoomState[en.target.id].fit) applyZoom(en.target.id); }
+});
+ro.observe(v2Pane); ro.observe(v3Pane);
+
+const mainEl = document.getElementById('main');
+const firstPane = mainEl.querySelector('.pane');
+const splitter = document.getElementById('splitter');
+function setSplit(frac){
+  frac = Math.min(0.85, Math.max(0.15, frac));
+  firstPane.style.flex = '0 0 calc(' + (frac * 100) + '% - 3px)';
+  store.set('split.' + (mainEl.classList.contains('stacked') ? 'stacked' : 'side'), frac);
+}
+splitter.addEventListener('mousedown', e => {
+  e.preventDefault();
+  document.body.classList.add('resizing'); splitter.classList.add('dragging');
+  const r = mainEl.getBoundingClientRect();
+  const stacked = mainEl.classList.contains('stacked');
+  const move = ev => setSplit(stacked ? (ev.clientY - r.top) / r.height : (ev.clientX - r.left) / r.width);
+  const up = () => {
+    document.body.classList.remove('resizing'); splitter.classList.remove('dragging');
+    window.removeEventListener('mousemove', move); window.removeEventListener('mouseup', up);
+  };
+  window.addEventListener('mousemove', move); window.addEventListener('mouseup', up);
+});
+splitter.addEventListener('dblclick', () => setSplit(0.5));
+function setLayout(mode){
+  mainEl.classList.toggle('stacked', mode === 'stacked');
+  setSplit(store.get('split.' + (mode === 'stacked' ? 'stacked' : 'side'), 0.5));
+  document.getElementById('layoutSide').classList.toggle('active', mode !== 'stacked');
+  document.getElementById('layoutStack').classList.toggle('active', mode === 'stacked');
+  store.set('layout', mode);
+}
+document.getElementById('layoutSide').addEventListener('click', () => setLayout('side'));
+document.getElementById('layoutStack').addEventListener('click', () => setLayout('stacked'));
+setLayout(store.get('layout', 'side'));
+
+const sidebarEl = document.getElementById('sidebar');
+function setSidebar(show){
+  sidebarEl.classList.toggle('collapsed', !show);
+  document.getElementById('toggleSidebar').classList.toggle('active', show);
+  store.set('sidebar', show);
+}
+document.getElementById('toggleSidebar').addEventListener('click', () => setSidebar(sidebarEl.classList.contains('collapsed')));
+setSidebar(store.get('sidebar', true));
+
+applyZoom('v2Pane'); applyZoom('v3Pane');
+
+// Scroll a pane (only that pane) so that el is centred.
+function centerInPane(pane, el){
+  const pr = pane.getBoundingClientRect(), er = el.getBoundingClientRect();
+  pane.scrollTop += er.height > pr.height * 0.85
+    ? (er.top - pr.top) - 24
+    : (er.top + er.height / 2) - (pr.top + pr.height / 2);
+  if(pane.scrollWidth > pane.clientWidth){
+    pane.scrollLeft += er.width > pr.width * 0.9
+      ? (er.left - pr.left) - 24
+      : (er.left + er.width / 2) - (pr.left + pr.width / 2);
+  }
+}
+
+let activeOverlays = []; // DOM elements to remove on next selection
+
+function clearHighlights(){
+  for(const el of activeOverlays) el.remove();
+  activeOverlays = [];
+}
+
+function applyHighlight(paneId, anchor, colorClass){
+  if(!anchor || anchor.page === null || anchor.page === undefined) return false;
+  const pageEl = document.getElementById(paneId + '-page-' + anchor.page);
+  if(!pageEl) return false;
+  let first = null;
+  for(const rect of anchor.rects){
+    const rp = document.getElementById(paneId + '-page-' + (rect.page ?? anchor.page));
+    if(!rp) continue;
+    const overlay = rp.querySelector('.overlay');
+    const div = document.createElement('div');
+    div.className = 'hlRect ' + colorClass + (anchor.approx ? ' approx' : '');
+    div.style.left = (rect.left * 100) + '%';
+    div.style.top = (rect.top * 100) + '%';
+    div.style.width = (rect.width * 100) + '%';
+    div.style.height = (rect.height * 100) + '%';
+    overlay.appendChild(div);
+    activeOverlays.push(div);
+    if(!first) first = div;
+  }
+  centerInPane(panes[paneId], first || pageEl);
+  return true;
+}
+
+function noteFor(anchor, status){
+  if(!anchor) return status === 'removed' ? 'removed in the revision' : 'no location in the manuscript';
+  let s = (anchor.src || '') + (anchor.page !== null && anchor.page !== undefined ? ' · p. ' + (anchor.page + 1) : ' · not in PDF');
+  if(anchor.approx) s += ' · approximate';
+  if(status) s += ' · ' + status;
+  return s;
+}
+
+function selectComment(id){
+  clearHighlights();
+  const c = COMMENTS.find(x => x.id === id);
+  document.querySelectorAll('.item').forEach(el => el.classList.remove('active'));
+  const itemEl = document.getElementById('item-' + id);
+  if(itemEl) itemEl.classList.add('active');
+
+  applyHighlight('v2Pane', c.v2, 'red');
+  applyHighlight('v3Pane', c.v3, 'green');
+  document.getElementById('v2Note').textContent = noteFor(c.v2);
+  document.getElementById('v3Note').textContent = noteFor(c.v3, c.match_status);
+}
+
+const SECTION_ORDER = CONFIG.sections;
+
+function groupBySection(items){
+  const map = new Map();
+  for(const it of items){
+    if(!map.has(it.section)) map.set(it.section, []);
+    map.get(it.section).push(it);
+  }
+  const ordered = [];
+  for(const s of SECTION_ORDER) if(map.has(s)) ordered.push([s, map.get(s)]);
+  for(const [s, arr] of map) if(!SECTION_ORDER.includes(s)) ordered.push([s, arr]);
+  return ordered;
+}
+
+const listEl = document.getElementById('commentList');
+let currentFilter = 'all';
+let currentQuery = '';
+
+function matchesFilter(c){
+  if(currentFilter === 'open' && c.status !== 'open') return false;
+  if(currentFilter === 'done' && c.status !== 'done') return false;
+  if(currentQuery){
+    const hay = (c.reviewer_text + ' ' + c.responses.map(r=>r.text).join(' ') + ' ' + (c.section || '')).toLowerCase();
+    if(!hay.includes(currentQuery)) return false;
+  }
+  return true;
+}
+
+function renderList(){
+  listEl.innerHTML = '';
+  const filtered = COMMENTS.filter(matchesFilter);
+  const groups = groupBySection(filtered);
+  for(const [section, arr] of groups){
+    const h = document.createElement('div');
+    h.className = 'sectionHeader';
+    h.textContent = section + ' (' + arr.length + ')';
+    listEl.appendChild(h);
+    for(const c of arr){
+      const div = document.createElement('div');
+      div.className = 'item';
+      div.id = 'item-' + c.id;
+      const colors = [...new Set(c.responses.map(r=>r.color))];
+      const chipHtml = colors.map(col => '<span class="chip ' + col + '"></span>').join('');
+      const statusIcon = c.status === 'done' ? '&#9989;' : c.status === 'open' ? '&#9898;' : '';
+      const has = a => a && a.page !== null && a.page !== undefined;
+      const locV2 = has(c.v2) ? (c.v2.approx ? 'approx' : 'found') : 'none';
+      const locV3 = has(c.v3) ? (c.v3.approx ? 'approx' : 'found') : 'none';
+      div.innerHTML =
+        '<div class="itemTop">' +
+          '<span class="status">' + statusIcon + '</span>' +
+          '<span class="locBadge ' + (locV2!=='none'?'found':'') + ' ' + (locV2==='approx'?'approx':'') + '">' + escapeHtml(CONFIG.oldLabel) + (has(c.v2)?' p'+(c.v2.page+1):'') + '</span>' +
+          '<span class="locBadge ' + (locV3!=='none'?'found':'') + ' ' + (locV3==='approx'?'approx':'') + '">' + escapeHtml(CONFIG.newLabel) + (has(c.v3)?' p'+(c.v3.page+1):'') + '</span>' +
+          '<span class="chips">' + chipHtml + '</span>' +
+        '</div>' +
+        '<div class="excerpt md">' + c.reviewer_html + '</div>';
+      div.addEventListener('click', () => {
+        const alreadyOpen = div.querySelector('.detail');
+        document.querySelectorAll('.detail').forEach(d => d.remove());
+        document.querySelectorAll('.item.open').forEach(x => x.classList.remove('open'));
+        if(!alreadyOpen){
+          const det = document.createElement('div');
+          det.className = 'detail';
+          let html = '<div class="reviewer md">' + c.reviewer_html + '</div>';
+          for(const r of c.responses){
+            html += '<div class="respBlock md ' + r.color + '"><span class="respLabel">author (' + r.color + ')</span>' + r.html + '</div>';
+          }
+          det.innerHTML = html;
+          det.addEventListener('click', e => e.stopPropagation());
+          div.appendChild(det);
+          div.classList.add('open');
+        }
+        selectComment(c.id);
+      });
+      listEl.appendChild(div);
+    }
+  }
+}
+
+document.querySelectorAll('.filterBtn').forEach(btn => {
+  btn.addEventListener('click', () => {
+    document.querySelectorAll('.filterBtn').forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    currentFilter = btn.dataset.filter;
+    renderList();
+  });
+});
+document.getElementById('searchBox').addEventListener('input', (e) => {
+  currentQuery = e.target.value.toLowerCase();
+  renderList();
+});
+
+renderList();
+
+function openFromHash(){
+  const lay = location.hash.match(/layout=(side|stacked)/);
+  if(lay) setLayout(lay[1]);
+  const zm = location.hash.match(/zoom=([\d.]+|fit)/);
+  if(zm){
+    for(const id of Object.keys(panes)){
+      zoomState[id] = zm[1] === 'fit' ? {fit:true, scale:1} : {fit:false, scale:parseFloat(zm[1])};
+      applyZoom(id);
+    }
+  }
+  const m = location.hash.match(/c=(\d+)/);
+  if(!m) return;
+  const el = document.getElementById('item-' + m[1]);
+  if(el){ el.click(); el.scrollIntoView({block:'center'}); }
+}
+window.addEventListener('hashchange', openFromHash);
+window.addEventListener('load', openFromHash);
+
+const totalV2 = COMMENTS.filter(c=>c.v2 && c.v2.page !== null && c.v2.page !== undefined).length;
+const totalV3 = COMMENTS.filter(c=>c.v3 && c.v3.page !== null && c.v3.page !== undefined).length;
+document.getElementById('statsLine').textContent =
+  COMMENTS.length + ' comments · located in ' + CONFIG.oldLabel + ': ' + totalV2 + ' · in ' + CONFIG.newLabel + ': ' + totalV3 +
+  ' · zoom: Ctrl+scroll or + / − / 0';
+</script>
+</body>
+</html>

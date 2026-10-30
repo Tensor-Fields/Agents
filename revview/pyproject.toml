@@ -1,0 +1,26 @@
+[build-system]
+requires = ["setuptools>=61"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "revview"
+version = "0.1.0"
+description = "Side-by-side viewer of reviewer comments on a commented manuscript and its revision (TeX/PDF)"
+readme = "README.md"
+requires-python = ">=3.9"
+dependencies = []
+
+[project.optional-dependencies]
+api = ["anthropic>=2.3"]
+images = ["Pillow"]
+annotations = ["pypdf"]
+all = ["anthropic>=2.3", "Pillow", "pypdf"]
+
+[project.scripts]
+revview = "revview.cli:main"
+
+[tool.setuptools]
+packages = ["revview"]
+
+[tool.setuptools.package-data]
+revview = ["template/*.html", "skill/SKILL.md"]
